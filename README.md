@@ -1,5 +1,5 @@
 
-# SwaggerToSDKGenerator – PHP SDK Generation Guide
+# FromSwaggerToPHPSDK – PHP SDK Generation Guide
 
 This guide defines how to generate a complete **PHP SDK** from any valid Swagger/OpenAPI specification. It is used by AI coding assistants and tools integrated with Context7 to create versioned, testable, and PSR-compliant SDKs for PHP projects.
 
@@ -120,7 +120,7 @@ Templates are used to render actual PHP code for services, DTOs, enums, and exce
 ```txt
 use context7
 
-Generate a PHP SDK using SwaggerToSDKGenerator instructions:
+Generate a PHP SDK using FromSwaggerToPHPSDK instructions:
 https://example.com/api/docs/
 ```
 
@@ -136,4 +136,4 @@ https://example.com/api/docs/
 
 **Version**: `1.0.0`  
 **Language**: PHP  
-**Context**: Context7 → SwaggerToSDKGenerator
+**Context**: Context7 → FromSwaggerToPHPSDK
