@@ -1,0 +1,87 @@
+{
+  "$schema": "https://context7.com/schema/context7.json",
+  "projectTitle": "FromSwaggerToPHPSDK",
+  "description": "A tool to generate a complete PHP SDK from any Swagger/OpenAPI specification with versioned, testable, and PSR-compliant code.",
+  "folders": [],
+  "excludeFolders": ["src", "tests", "docs/old", "i18n/*"],
+  "excludeFiles": ["CHANGELOG.md", "LICENSE.md"],
+  "rules": [
+    "Parse the Swagger/OpenAPI URL to extract version, tags, operations, schemas, and security schemes.",
+    "Generate a PHP SDK in the `generated-sdk` directory with this structure:",
+    "  - `generated-sdk/`",
+    "    ├── `composer.json`",
+    "    ├── `src/`",
+    "    │   └── `v1/`",
+    "    │       ├── `Services/`",
+    "    │       │   └── `{Tag}Service.php`",
+    "    │       ├── `Models/`",
+    "    │       │   ├── `DTO/`",
+    "    │       │   │   └── `{Model}.php`",
+    "    │       │   └── `Enums/`",
+    "    │       │       └── `{Enum}.php`",
+    "    │       └── `Exceptions/`",
+    "    │           └── `{Exception}.php`",
+    "    ├── `tests/`",
+    "    │   ├── `Unit/v1/Services/`",
+    "    │   │   └── `{Service}Test.php`",
+    "    │   └── `Feature/v1/`",
+    "    │       └── `{Tag}Test.php`",
+    "    └── `README.md`",
+    "Map Swagger types to PHP types as follows: string -> string, integer -> int, boolean -> bool, number -> float, array -> array, object -> {Class}, enum -> {Enum}.",
+    "If securitySchemes include 'type: http' and 'scheme: bearer', add 'private string $apiKey' to service class, include it in constructor, and add 'Authorization: Bearer ' . $apiKey to Guzzle options.",
+    "Use PSR-4 autoloading with namespace derived from Swagger info.title (default to Api\\SDK).",
+    "Generate methods with @param, @return, and @throws annotations based on Swagger operation details.",
+    "Create unit tests with mock responses for success and failure cases.",
+    "Ensure all code uses PHP 8.1+ syntax and supports versioning (e.g., v1, v2 folders)."
+  ],
+  "codeExamples": [
+    {
+      "title": "Composer Configuration Example",
+      "description": "Example composer.json for the PHP SDK project.",
+      "language": "json",
+      "code": "{\n  \"name\": \"{vendor}/sdk\",\n  \"description\": \"{info.description | default('API SDK for PHP')}\",\n  \"require\": {\n    \"php\": \"^8.1\",\n    \"guzzlehttp/guzzle\": \"^7.0\",\n    \"pestphp/pest\": \"^2.0\"\n  },\n  \"autoload\": {\n    \"psr-4\": {\n      \"{namespace}\\\\\": \"src/\"\n    }\n  },\n  \"autoload-dev\": {\n    \"psr-4\": {\n      \"{namespace}\\\\Tests\\\\\": \"tests/\"\n    }\n  }\n}"
+    },
+    {
+      "title": "Service Class Example",
+      "description": "Example of a service class with Guzzle and optional Bearer auth.",
+      "language": "php",
+      "code": "<?php\nnamespace {namespace}\\\\{version}\\Services;\n\nuse GuzzleHttp\\ClientInterface;\nuse {namespace}\\\\{version}\\Models\\DTO\\{returnType};\nuse {namespace}\\\\{version}\\Exceptions\\ApiException;\n\nclass {serviceName}\n{\n    private ClientInterface $client;\n    private ?string $apiKey = null;\n\n    public function __construct(ClientInterface $client, ?string $apiKey = null)\n    {\n        $this->client = $client;\n        if ($apiKey) {\n            $this->apiKey = $apiKey;\n        }\n    }\n\n    public function {methodName}({parameters}): {returnType}\n    {\n        $options = [\n            'headers' => $this->apiKey ? ['Authorization' => 'Bearer ' . $this->apiKey] : []\n        ];\n        $response = $this->client->{httpMethod}('{path}', $options);\n        $data = json_decode($response->getBody()->getContents(), true);\n        return new {returnType}($data);\n    }\n}"
+    },
+    {
+      "title": "DTO Class Example",
+      "description": "Example of a Data Transfer Object class with properties.",
+      "language": "php",
+      "code": "<?php\nnamespace {namespace}\\\\{version}\\Models\\DTO;\n\nclass {className}\n{\n    {properties}\n\n    public function __construct(array $data)\n    {\n        {constructorAssignments}\n    }\n\n    {getters}\n    {setters}\n}"
+    },
+    {
+      "title": "Enum Example",
+      "description": "Example of a PHP 8.1+ native enum from an OpenAPI enum definition.",
+      "language": "php",
+      "code": "<?php\nnamespace {namespace}\\\\{version}\\Models\\Enums;\n\nenum {enumName}: string\n{\n    case ACTIVE = 'active';\n    case INACTIVE = 'inactive';\n}"
+    },
+    {
+      "title": "Exception Class Example",
+      "description": "Example of a custom exception class extending ApiException.",
+      "language": "php",
+      "code": "<?php\nnamespace {namespace}\\\\{version}\\Exceptions;\n\nclass {exceptionName} extends ApiException\n{\n    public function __construct(string $message = 'API error', int $code = {code})\n    {\n        parent::__construct($message, $code);\n    }\n}"
+    },
+    {
+      "title": "Unit Test Example",
+      "description": "Example of a unit test with Pest-compatible PHPUnit mocks.",
+      "language": "php",
+      "code": "<?php\nnamespace {namespace}\\Tests\\Unit\\{version}\\Services;\n\nuse {namespace}\\\\{version}\\Services\\{serviceName};\nuse {namespace}\\\\{version}\\Models\\DTO\\{returnType};\nuse {namespace}\\\\{version}\\Exceptions\\{exceptionClass};\nuse GuzzleHttp\\ClientInterface;\nuse GuzzleHttp\\Psr7\\Response;\nuse PHPUnit\\Framework\\TestCase;\n\nclass {serviceName}Test extends TestCase\n{\n    private $client;\n    private $service;\n\n    protected function setUp(): void\n    {\n        $this->client = $this->createMock(ClientInterface::class);\n        $this->service = new {serviceName}($this->client);\n    }\n\n    public function test{methodName}Success()\n    {\n        $this->client->method('{httpMethod}')->willReturn(new Response(200, [], json_encode({mockResponse})));\n        $result = $this->service->{methodName}({mockParams});\n        $this->assertInstanceOf({returnType}::class, $result);\n    }\n\n    public function test{methodName}Failure()\n    {\n        $this->client->method('{httpMethod}')->willThrowException(new \\GuzzleHttp\\Exception\\ClientException('Error', new \\GuzzleHttp\\Psr7\\Request('{httpMethod}', '{path}'), new Response({errorCode})));\n        $this->expectException({exceptionClass}::class);\n        $this->service->{methodName}({mockParams});\n    }\n}"
+    },
+    {
+      "title": "Usage Prompt Example",
+      "description": "Example prompt for AI coding assistants to generate a PHP SDK.",
+      "language": "txt",
+      "code": "use context7\n\nGenerate a PHP SDK using FromSwaggerToPHPSDK instructions:\nhttps://example.com/api/docs/"
+    }
+  ],
+  "previousVersions": [
+    {
+      "tag": "v1.0.0",
+      "title": "Initial Version"
+    }
+  ]
+}
